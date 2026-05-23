@@ -1,0 +1,2385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VendControl · Gestión de Máquinas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* --- Reset & Base --- */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d0f12;
+    --surface:  #13161b;
+    --card:     #1a1e25;
+    --border:   #252a33;
+    --border2:  #2e3440;
+    --text:     #e8eaf0;
+    --muted:    #6b7280;
+    --accent:   #f0c040;
+    --accent2:  #e07b39;
+    --green:    #3dd68c;
+    --red:      #f05252;
+    --blue:     #60a5fa;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  /* --- Base page --- */
+  body {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* --- Layout --- */
+  .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+  /* --- Sidebar --- */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-tag {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .logo-name {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .logo-name span { color: var(--text); }
+
+  .nav-section { padding: 16px 12px 8px; }
+  .nav-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding: 0 8px;
+    margin-bottom: 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s;
+    font-size: 13px;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--card); color: var(--text); border-color: var(--border); }
+  .nav-item.active { background: var(--card); color: var(--accent); border-color: var(--border2); }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-family: var(--font-head);
+    font-weight: 600;
+  }
+  .nav-badge.green { background: var(--green); color: #0d1a10; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* --- Main content --- */
+  .main { padding: 32px 36px; overflow-x: hidden; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* --- Page header --- */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    gap: 16px;
+  }
+  .page-title {
+    font-family: var(--font-head);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+  .page-title small {
+    display: block;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    margin-top: 4px;
+  }
+
+  /* --- Buttons --- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--border2);
+    background: var(--card);
+    color: var(--text);
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); color: #0d0f12; border-color: var(--accent); font-weight: 600; }
+  .btn-primary:hover { background: #f5d060; border-color: #f5d060; color: #0d0f12; }
+  .btn-danger { border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: var(--red); color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn svg { width: 14px; height: 14px; }
+
+  /* --- Stat cards --- */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .stat-label { font-size: 11px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+  .stat-value { font-family: var(--font-head); font-size: 32px; font-weight: 800; line-height: 1; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.green  { color: var(--green); }
+  .stat-value.red    { color: var(--red); }
+  .stat-value.blue   { color: var(--blue); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* --- Machines grid --- */
+  .machines-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+  .machine-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .machine-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--green);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s;
+  }
+  .machine-card:hover::before { transform: scaleX(1); }
+  .machine-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .machine-card.warn::before { background: var(--accent); transform: scaleX(1); border-color: var(--border2); }
+  .machine-card.danger::before { background: var(--red); transform: scaleX(1); }
+
+  .mc-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .mc-code { font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .mc-name { font-family: var(--font-head); font-size: 17px; font-weight: 700; margin-top: 2px; }
+  .mc-location { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .mc-status {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .mc-status.warn { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .mc-status.danger { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+  .mc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .mc-stat { background: var(--surface); border-radius: 8px; padding: 10px 12px; }
+  .mc-stat-val { font-size: 20px; font-weight: 600; font-family: var(--font-head); }
+  .mc-stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+  /* --- Alerts --- */
+  .alerts-list { display: flex; flex-direction: column; gap: 8px; }
+  .alert-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .alert-item.critical { border-color: rgba(240,82,82,0.4); background: rgba(240,82,82,0.05); }
+  .alert-item.low      { border-color: rgba(240,192,64,0.4); background: rgba(240,192,64,0.05); }
+  .alert-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .alert-dot.critical { background: var(--red); }
+  .alert-dot.low      { background: var(--accent); }
+  .alert-info { flex: 1; }
+  .alert-product { font-weight: 500; font-size: 14px; }
+  .alert-machine { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .alert-qty {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 800;
+    min-width: 50px;
+    text-align: right;
+  }
+  .alert-qty.critical { color: var(--red); }
+  .alert-qty.low      { color: var(--accent); }
+  .alert-qty-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+
+  /* --- Stock table (machine detail) --- */
+  .stock-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+  .stock-table th {
+    font-size: 10px; letter-spacing: 2px; color: var(--muted);
+    text-transform: uppercase; padding: 0 16px 8px;
+    text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .stock-row td {
+    background: var(--card);
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .stock-row td:first-child { border-left: 1px solid var(--border); border-radius: 10px 0 0 10px; }
+  .stock-row td:last-child  { border-right: 1px solid var(--border); border-radius: 0 10px 10px 0; }
+  .stock-row:hover td { border-color: var(--border2); background: #1f242d; }
+
+  .prod-name { font-weight: 500; }
+  .prod-code { font-size: 11px; color: var(--muted); }
+  .prod-price { color: var(--accent); font-weight: 600; }
+
+  .qty-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-family: var(--font-head);
+    font-size: 14px;
+  }
+  .qty-pill.ok      { background: rgba(61,214,140,0.12); color: var(--green); }
+  .qty-pill.low     { background: rgba(240,192,64,0.12); color: var(--accent); }
+  .qty-pill.empty   { background: rgba(240,82,82,0.12);  color: var(--red); }
+
+  .qty-bar {
+    width: 80px; height: 4px;
+    background: var(--border2);
+    border-radius: 2px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+  .qty-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+
+  /* --- Filter bar --- */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .filter-bar input, .filter-bar select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .filter-bar input:focus, .filter-bar select:focus { border-color: var(--accent); }
+  .filter-bar input { flex: 1; min-width: 200px; }
+
+  /* --- Modal --- */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-backdrop.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 28px;
+    width: 500px;
+    max-width: 90vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    transform: translateY(12px);
+    transition: transform 0.2s;
+  }
+  .modal-backdrop.open .modal { transform: translateY(0); }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .modal-title { font-family: var(--font-head); font-size: 20px; font-weight: 700; }
+  .modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; padding: 4px; }
+  .modal-close:hover { color: var(--text); }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 11px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  select.form-input option { background: var(--card); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* --- Toast --- */
+  .toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 250px;
+    animation: toastIn 0.2s ease;
+    border-left: 3px solid var(--green);
+  }
+  .toast.error  { border-left-color: var(--red); }
+  .toast.warn   { border-left-color: var(--accent); }
+  @keyframes toastIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
+
+  /* --- Back button --- */
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    margin-bottom: 20px;
+    padding: 6px 0;
+    background: none;
+    border: none;
+    font-family: var(--font-mono);
+  }
+  .back-btn:hover { color: var(--text); }
+  .back-btn svg { width: 14px; height: 14px; }
+
+  /* --- Loading skeleton --- */
+  .skeleton {
+    background: linear-gradient(90deg, var(--card) 25%, var(--border) 50%, var(--card) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  /* --- Scrollbar --- */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* --- Responsive --- */
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .main { padding: 20px; }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-state svg { width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .tag-ok      { background: rgba(61,214,140,0.12); color: var(--green); }
+  .tag-low     { background: rgba(240,192,64,0.12);  color: var(--accent); }
+  .tag-empty   { background: rgba(240,82,82,0.12);   color: var(--red); }
+
+  .section-title {
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* --- LOGIN OVERLAY --- */
+  .login-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 30%, rgba(20, 24, 33, 0.98), rgba(10, 12, 16, 0.99));
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(12px);
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+  }
+  .login-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  .login-card {
+    background: rgba(19, 22, 27, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    padding: 40px;
+    width: 480px;
+    max-width: 90vw;
+    text-align: center;
+    animation: loginScaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes loginScaleIn {
+    from { transform: scale(0.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .login-header {
+    margin-bottom: 28px;
+  }
+  .login-header h1 {
+    font-family: var(--font-head);
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .login-header h1 span { color: var(--accent); }
+  .login-subtitle {
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .login-roles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .role-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 14px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .role-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+    background: #1f242d;
+  }
+  .role-card.active {
+    border-color: var(--accent);
+    background: rgba(240, 192, 64, 0.05);
+    box-shadow: 0 0 20px rgba(240, 192, 64, 0.1);
+  }
+  .role-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    border: 1px solid var(--border);
+    transition: all 0.25s;
+    color: var(--muted);
+  }
+  .role-card.active .role-icon {
+    background: var(--accent);
+    color: #0d0f12;
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(240, 192, 64, 0.3);
+  }
+  .role-card:hover .role-icon {
+    color: var(--text);
+  }
+  .role-title {
+    font-family: var(--font-head);
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .role-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.3;
+  }
+  .login-form {
+    text-align: left;
+    margin-bottom: 24px;
+  }
+  .login-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    box-shadow: 0 4px 15px rgba(240, 192, 64, 0.2);
+  }
+  
+  /* --- USER BAR & BALANCE WIDGET --- */
+  .user-badge {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin: 16px 12px;
+  }
+  .user-badge-role {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .user-badge-name {
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .user-badge-name span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+  }
+  .balance-display {
+    background: linear-gradient(135deg, rgba(240, 192, 64, 0.1), rgba(224, 123, 57, 0.05));
+    border: 1px solid rgba(240, 192, 64, 0.2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .balance-info {
+    display: flex;
+    flex-direction: column;
+  }
+  .balance-amount {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .balance-lbl {
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .btn-refill-balance {
+    background: transparent;
+    border: 1px solid rgba(240, 192, 64, 0.4);
+    color: var(--accent);
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-size: 9px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: all 0.15s;
+    outline: none;
+  }
+  .btn-refill-balance:hover {
+    background: var(--accent);
+    color: #0d0f12;
+  }
+
+  /* --- SHOPPING CART SLIDING PANEL --- */
+  .cart-panel {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 380px;
+    max-width: 100vw;
+    height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    box-shadow: -10px 0 35px rgba(0,0,0,0.6);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cart-panel.open {
+    right: 0;
+  }
+  .cart-header {
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cart-title {
+    font-family: var(--font-head);
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .cart-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+  .cart-close:hover { color: var(--text); }
+  .cart-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .cart-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .cart-item-info { flex: 1; min-width: 0; }
+  .cart-item-name { font-weight: 500; font-size: 13px; margin-bottom: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+  .cart-item-price { color: var(--accent); font-size: 12px; font-weight: 600; }
+  .cart-item-qty-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px 4px;
+  }
+  .cart-qty-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+  .cart-qty-btn:hover { background: var(--card); color: var(--text); }
+  .cart-qty-val {
+    font-size: 12px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    min-width: 16px;
+    text-align: center;
+  }
+  .cart-item-delete {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cart-item-delete:hover { color: var(--red); }
+  .cart-footer {
+    padding: 20px;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+  }
+  .cart-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .cart-total-lbl { font-weight: 600; color: var(--muted); }
+  .cart-total-val {
+    font-family: var(--font-head);
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .cart-actions {
+    display: grid;
+    grid-template-columns: 1fr 2.2fr;
+    gap: 10px;
+  }
+  .cart-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--muted);
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .cart-empty-state svg {
+    width: 48px;
+    height: 48px;
+    opacity: 0.2;
+    margin-bottom: 16px;
+  }
+
+  /* --- FLOATING CART TRIGGER BUTTON --- */
+  .cart-floating-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--accent);
+    color: #0d0f12;
+    border: none;
+    border-radius: 50px;
+    height: 56px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 6px 20px rgba(240, 192, 64, 0.35);
+    cursor: pointer;
+    z-index: 999;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .cart-floating-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(240, 192, 64, 0.45);
+    background: #f5d060;
+  }
+  .cart-floating-btn svg { width: 18px; height: 18px; }
+  .cart-floating-badge {
+    background: var(--red);
+    color: white;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  }
+
+  /* --- ADMIN CREATE PRODUCT FORM --- */
+  .admin-catalog-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 24px;
+  }
+  .admin-catalog-form {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1fr auto;
+    gap: 14px;
+    align-items: end;
+  }
+  @media (max-width: 768px) {
+    .admin-catalog-form { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>Vend<span>Control</span></h1>
+      <div class="login-subtitle">Gestión inteligente de máquinas expendedoras</div>
+    </div>
+    
+    <label class="form-label" style="margin-bottom: 12px; text-align: center;">Selecciona tu perfil de acceso</label>
+    <div class="login-roles">
+      <div class="role-card active" id="role-admin-card" onclick="selectLoginRole('admin')">
+        <div class="role-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM20 21a8 8 0 0 0-16 0"/>
+          </svg>
+        </div>
+        <div class="role-title">Administrador</div>
+        <div class="role-desc">Gestión de stock, alertas y catálogo</div>
+      </div>
+      <div class="role-card" id="role-user-card" onclick="selectLoginRole('user')">
+        <div class="role-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <div class="role-title">Usuario (Cliente)</div>
+        <div class="role-desc">Consulta de productos y compras</div>
+      </div>
+    </div>
+
+    <div class="login-form">
+      <div class="form-group">
+        <label class="form-label">Usuario</label>
+        <input type="text" class="form-input" id="login-username" value="admin">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input type="password" class="form-input" id="login-password" value="admin">
+      </div>
+    </div>
+
+    <button class="btn btn-primary login-btn" onclick="submitLogin()">Iniciar sesión</button>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<div class="app">
+
+  <!-- --- SIDEBAR --- -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-tag">Sistema</div>
+      <div class="logo-name">Vend<span>Control</span></div>
+    </div>
+
+    <div class="user-badge" id="sidebar-user-badge" style="display:none">
+      <div class="user-badge-role" id="user-badge-role">ADMINISTRADOR</div>
+      <div class="user-badge-name" id="user-badge-name"><span></span> admin</div>
+      <div class="balance-display" id="user-balance-widget" style="display:none">
+        <div class="balance-info">
+          <span class="balance-lbl">Tu Saldo</span>
+          <span class="balance-amount" id="balance-amount">20.00 &euro;</span>
+        </div>
+        <button class="btn-refill-balance" onclick="refillBalance(event)">Recargar</button>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Vistas</div>
+
+      <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        Dashboard
+      </div>
+
+      <div class="nav-item" data-page="maquinas" onclick="navigate('maquinas')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <path d="M8 6h8M8 10h8M8 14h4"/>
+          <circle cx="16" cy="14" r="2"/>
+        </svg>
+        Máquinas
+      </div>
+
+      <div class="nav-item" data-page="alertas" onclick="navigate('alertas')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        Alertas
+        <span class="nav-badge" id="badge-alertas">0</span>
+      </div>
+
+      <div class="nav-item" data-page="reponer" onclick="navigate('reponer')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12l7-7 7 7"/>
+        </svg>
+        Reponer stock
+      </div>
+
+      <div class="nav-item" data-page="productos" onclick="navigate('productos')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path d="M20 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1Z"/>
+          <path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/>
+        </svg>
+        Productos
+      </div>
+
+      <div class="nav-item" onclick="logout()" style="margin-top:20px; color:var(--red); border-color:transparent;">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+        </svg>
+        Cerrar sesión
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div style="margin-bottom:4px; color:var(--text)">Sistema de gestión</div>
+      <div>Máquinas expendedoras</div>
+      <div style="margin-top:8px; font-size:10px">Umbral stock bajo: <span style="color:var(--accent)" id="threshold-display">5</span> uds.</div>
+    </div>
+  </aside>
+
+  <!-- --- MAIN --- -->
+  <main class="main">
+
+    <!-- -- DASHBOARD -- -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div class="page-title">Dashboard
+          <small id="last-refresh">Cargando datos...</small>
+        </div>
+        <button class="btn" onclick="loadAll()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+          Actualizar
+        </button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Máquinas</div>
+          <div class="stat-value accent" id="stat-maquinas">—</div>
+          <div class="stat-sub" id="stat-puntos">puntos de venta</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total unidades</div>
+          <div class="stat-value blue" id="stat-unidades">—</div>
+          <div class="stat-sub">en todas las máquinas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Stock bajo</div>
+          <div class="stat-value red" id="stat-bajo">—</div>
+          <div class="stat-sub">productos a reponer</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Agotados</div>
+          <div class="stat-value" id="stat-agotados" style="color:var(--red)">—</div>
+          <div class="stat-sub">productos sin stock</div>
+        </div>
+      </div>
+
+      <div class="section-title">Máquinas con alertas</div>
+      <div class="machines-grid" id="dash-machines"></div>
+    </div>
+
+    <!-- ── MÁQUINAS ── -->
+    <div id="page-maquinas" class="page">
+      <div id="maquinas-list-view">
+        <div class="page-header">
+          <div class="page-title">Máquinas <small>Todas las máquinas expendedoras</small></div>
+        </div>
+        <div class="filter-bar">
+          <input type="text" id="search-maquinas" placeholder="Buscar máquina..." oninput="filterMachines()">
+          <select id="filter-ptv" onchange="filterMachines()">
+            <option value="">Todos los puntos de venta</option>
+          </select>
+          <select id="filter-estado" onchange="filterMachines()">
+            <option value="">Todos los estados</option>
+            <option value="ok">Con stock</option>
+            <option value="warn">Stock bajo</option>
+            <option value="danger">Agotados</option>
+          </select>
+        </div>
+        <div class="machines-grid" id="machines-grid"></div>
+      </div>
+
+      <!-- Machine detail view -->
+      <div id="machine-detail-view" style="display:none">
+        <button class="back-btn" onclick="showMachineList()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Volver a máquinas
+        </button>
+        <div class="page-header">
+          <div class="page-title" id="detail-title">Máquina <small id="detail-subtitle"></small></div>
+          <button class="btn btn-primary" onclick="openAddProduct()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Añadir producto
+          </button>
+        </div>
+        <div id="stock-table-container"></div>
+      </div>
+    </div>
+
+    <!-- -- ALERTAS -- -->
+    <div id="page-alertas" class="page">
+      <div class="page-header">
+        <div class="page-title">Alertas de stock <small>Productos que necesitan reposición</small></div>
+        <button class="btn btn-primary" onclick="reponerTodas()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+          Reponer todas
+        </button>
+      </div>
+      <div class="alerts-list" id="alerts-list"></div>
+    </div>
+
+    <!-- -- REPONER -- -->
+    <div id="page-reponer" class="page">
+      <div class="page-header">
+        <div class="page-title">Reponer stock <small>Selecciona máquina y productos</small></div>
+      </div>
+
+      <div class="form-row" style="margin-bottom:20px">
+        <div class="form-group">
+          <label class="form-label">Punto de venta</label>
+          <select class="form-input" id="rep-ptv" onchange="loadRepMachines()">
+            <option value="">— Selecciona punto de venta —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Máquina</label>
+          <select class="form-input" id="rep-maquina" onchange="loadRepStock()">
+            <option value="">— Selecciona máquina —</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="rep-stock-container"></div>
+    </div>
+
+    <!-- -- PRODUCTOS -- -->
+    <div id="page-productos" class="page">
+      <div class="page-header">
+        <div class="page-title">Catálogo de productos <small>Todos los snacks y bebidas</small></div>
+      </div>
+      
+      <!-- Formulario para agregar productos al catálogo general (Solo Admin) -->
+      <div class="admin-catalog-panel" id="admin-catalog-panel" style="display:none">
+        <div class="section-title" style="margin-bottom:16px">Registrar nuevo producto en catálogo</div>
+        <div class="admin-catalog-form">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Código Único</label>
+            <input type="text" class="form-input" id="new-prod-code" placeholder="Ej: COCA_LATA_33">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Nombre / Descripción</label>
+            <input type="text" class="form-input" id="new-prod-desc" placeholder="Ej: Coca-Cola Original 33cl">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Precio (&euro;)</label>
+            <input type="number" step="0.01" min="0.05" class="form-input" id="new-prod-price" placeholder="Ej: 1.50">
+          </div>
+          <button class="btn btn-primary" onclick="crearNuevoProductoCatalogo()" style="height:40px; padding:0 20px;">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right:4px"><path d="M12 5v14M5 12h14"/></svg>
+            Agregar al Catálogo
+          </button>
+        </div>
+      </div>
+
+      <div class="machines-grid" id="products-grid"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- --- MODALS --- -->
+
+<!-- Reponer individual -->
+<div class="modal-backdrop" id="modal-reponer">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Reponer producto</div>
+      <button class="modal-close" onclick="closeModal('modal-reponer')" aria-label="Cerrar" title="Cerrar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6L6 18" />
+          <path d="M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div id="modal-reponer-body"></div>
+    <div style="display:flex; gap:10px; margin-top:20px">
+      <button class="btn" style="flex:1" onclick="closeModal('modal-reponer')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-modal" style="flex:1" onclick="confirmarReponer()">Reponer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Añadir producto a máquina -->
+<div class="modal-backdrop" id="modal-add-product">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Añadir producto a máquina</div>
+      <button class="modal-close" onclick="closeModal('modal-add-product')" aria-label="Cerrar" title="Cerrar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6L6 18" />
+          <path d="M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Producto</label>
+      <select class="form-input" id="add-prod-select">
+        <option value="">Cargando...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Cantidad inicial</label>
+      <input type="number" class="form-input" id="add-prod-qty" min="0" value="10" placeholder="Unidades">
+    </div>
+    <div style="display:flex; gap:10px; margin-top:20px">
+      <button class="btn" style="flex:1" onclick="closeModal('modal-add-product')">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" onclick="confirmarAddProduct()">Añadir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reponer lote (alertas) -->
+<div class="modal-backdrop" id="modal-lote">
+  <div class="modal" style="width:580px">
+    <div class="modal-header">
+      <div class="modal-title">Reponer todos los productos bajos</div>
+      <button class="modal-close" onclick="closeModal('modal-lote')" aria-label="Cerrar" title="Cerrar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6L6 18" />
+          <path d="M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <p style="color:var(--muted); font-size:13px; margin-bottom:16px">
+      Ajusta las cantidades a reponer para cada producto:
+    </p>
+    <div id="modal-lote-body"></div>
+    <div style="display:flex; gap:10px; margin-top:20px">
+      <button class="btn" style="flex:1" onclick="closeModal('modal-lote')">Cancelar</button>
+      <button class="btn btn-primary" style="flex:1" onclick="confirmarLote()">Confirmar reposición</button>
+    </div>
+  </div>
+</div>
+
+<!-- CESTA DE COMPRA SLIDING PANEL -->
+<div class="cart-panel" id="cart-panel">
+  <div class="cart-header">
+    <div class="cart-title">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+      </svg>
+      Mi Cesta
+    </div>
+    <button class="cart-close" onclick="toggleCartPanel(false)" aria-label="Cerrar carrito" title="Cerrar carrito">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 6L6 18" />
+        <path d="M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+  <div class="cart-items" id="cart-items-container">
+    <!-- Dynamic cart items will go here -->
+  </div>
+  <div class="cart-footer">
+    <div class="cart-summary-row">
+      <span class="cart-total-lbl">Total de la Cesta</span>
+      <span class="cart-total-val" id="cart-total-value">0.00 &euro;</span>
+    </div>
+    <div class="cart-actions">
+      <button class="btn btn-danger" onclick="clearCart()" style="padding: 10px 0; justify-content: center;">Vaciar</button>
+      <button class="btn btn-primary" onclick="checkoutCart()" style="padding: 10px 0; justify-content: center; font-weight: 700;">Comprar todo</button>
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING CART TRIGGER BUTTON -->
+<button class="cart-floating-btn" id="cart-floating-btn" onclick="toggleCartPanel(true)" style="display:none">
+  <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+  </svg>
+  <span id="cart-floating-badge" class="cart-floating-badge">0</span>
+  Ver cesta
+</button>
+
+<script>
+// ─────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────
+const API_BASE     = 'api';          // Ruta relativa a la carpeta /api
+const LOW_THRESHOLD = 5;             // Umbral de stock bajo (debe coincidir con config.php)
+
+const state = {
+  machines: [],
+  alerts: [],
+  products: [],
+  puntos: [],
+  currentMachineId: null,
+  currentMachineStock: [],
+  reponerTarget: null,
+  userRole: null, // 'admin' o 'user'
+  userName: null,
+  userBalance: 20.00,
+  cart: [], // items: { id_stockmaq, name, price, qty, max_qty, machine_id }
+};
+
+// ----------------------------------------
+// API
+// ----------------------------------------
+async function api(endpoint) {
+  try {
+    const r = await fetch(`${API_BASE}/${endpoint}`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch (e) {
+    toast(`Error de conexión: ${e.message}`, 'error');
+    return null;
+  }
+}
+
+async function apiPost(data) {
+  try {
+    const r = await fetch(`${API_BASE}/post.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    const text = await r.text();
+    if (!text) return null;
+
+    try {
+      return JSON.parse(text);
+    } catch (parseError) {
+      const snippet = text.replace(/\s+/g, ' ').slice(0, 140);
+      return { ok: false, error: `Respuesta inválida del servidor (HTTP ${r.status}): ${snippet}` };
+    }
+  } catch (e) {
+    toast(`Error: ${e.message}`, 'error');
+    return null;
+  }
+}
+
+// --- NAVIGATION ---
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page)?.classList.add('active');
+  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+
+  // Lazy load
+  if (page === 'maquinas') loadMachines();
+  if (page === 'alertas') loadAlerts();
+  if (page === 'productos' && !state.products.length) loadProducts();
+  if (page === 'reponer') loadReponerSelects();
+}
+
+// --- LOAD ALL (dashboard) ---
+async function loadAll() {
+  const [machines, alerts, puntos] = await Promise.all([
+    api('get.php?action=maquinas'),
+    api('get.php?action=alertas'),
+    api('get.php?action=puntos_venta'),
+  ]);
+
+  if (machines) { state.machines = machines; renderDashboard(machines, alerts || []); }
+  if (alerts)   { state.alerts = alerts; updateAlertBadge(alerts.length); }
+  if (puntos)   { state.puntos = puntos; }
+
+  const refreshEl = document.getElementById('last-refresh');
+  if (refreshEl) {
+    refreshEl.textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-ES');
+  }
+}
+
+function renderDashboard(machines, alerts) {
+  const totalUnits = machines.reduce((s, m) => s + Number(m.TOTAL_UNIDADES), 0);
+  const bajos      = alerts.filter(a => a.N_CANTIDAD > 0).length;
+  const agotados   = alerts.filter(a => a.N_CANTIDAD == 0).length;
+  const ptvsSet    = new Set(machines.map(m => m.ID_PUNTOVENTA));
+
+  const mEl = document.getElementById('stat-maquinas');
+  if (mEl) mEl.textContent = machines.length;
+  
+  const pEl = document.getElementById('stat-puntos');
+  if (pEl) pEl.textContent = ptvsSet.size + ' puntos de venta';
+  
+  const uEl = document.getElementById('stat-unidades');
+  if (uEl) uEl.textContent = totalUnits.toLocaleString('es-ES');
+  
+  const bEl = document.getElementById('stat-bajo');
+  if (bEl) bEl.textContent = bajos;
+  
+  const aEl = document.getElementById('stat-agotados');
+  if (aEl) aEl.textContent = agotados;
+
+  const warnMachines = machines.filter(m =>
+    Number(m.PRODS_BAJOS) > 0 || Number(m.PRODS_AGOTADOS) > 0
+  );
+
+  const grid = document.getElementById('dash-machines');
+  if (grid) {
+    if (!warnMachines.length) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <p>¡Todo en orden! No hay alertas de stock.</p>
+      </div>`;
+    } else {
+      grid.innerHTML = warnMachines.map(m => machineCardHTML(m)).join('');
+    }
+  }
+}
+// ---------- MACHINES ----------
+async function loadMachines() {
+  const machines = await api('get.php?action=maquinas');
+  if (!machines) return;
+  state.machines = machines;
+
+  // Populate PTV filter
+  const ptvs = [...new Map(machines.map(m => [m.ID_PUNTOVENTA, m.C_PUNTOVENTA])).entries()];
+  const sel = document.getElementById('filter-ptv');
+  if (sel) {
+    sel.innerHTML = '<option value="">Todos los puntos de venta</option>' +
+      ptvs.map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+  }
+
+  renderMachineGrid(machines);
+}
+
+function renderMachineGrid(machines) {
+  const grid = document.getElementById('machines-grid');
+  if (!grid) return;
+  if (!machines.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><p>No se encontraron máquinas.</p></div>`;
+    return;
+  }
+  grid.innerHTML = machines.map(m => machineCardHTML(m, true)).join('');
+}
+
+function machineCardHTML(m, clickable = true) {
+  const agotados = Number(m.PRODS_AGOTADOS);
+  const bajos    = Number(m.PRODS_BAJOS);
+  const cls      = agotados > 0 ? 'danger' : (bajos > 0 ? 'warn' : '');
+  const statusCls= agotados > 0 ? 'danger' : (bajos > 0 ? 'warn' : '');
+  const onclick  = clickable ? `onclick="openMachineDetail(${m.ID_MAQUINA})"` : '';
+
+  return `<div class="machine-card ${cls}" ${onclick}>
+    <div class="mc-header">
+      <div>
+        <div class="mc-code">${m.C_MAQUINA}</div>
+        <div class="mc-name">${m.D_DESCRIPCION || m.C_MAQUINA}</div>
+        <div class="mc-location"><svg class="icon icon-location" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 21s-6-4.35-6-10a6 6 0 1 1 12 0c0 5.65-6 10-6 10z" />
+            <circle cx="12" cy="11" r="2" />
+          </svg> ${m.C_PUNTOVENTA}</div>
+      </div>
+      <div class="mc-status ${statusCls}"></div>
+    </div>
+    <div class="mc-stats">
+      <div class="mc-stat">
+        <div class="mc-stat-val">${Number(m.TOTAL_UNIDADES).toLocaleString('es-ES')}</div>
+        <div class="mc-stat-lbl">Unidades</div>
+      </div>
+      <div class="mc-stat">
+        <div class="mc-stat-val" style="color:${agotados > 0 ? 'var(--red)' : (bajos > 0 ? 'var(--accent)' : 'var(--green)')}">${agotados > 0 ? agotados : (bajos > 0 ? bajos : '✓')}</div>
+        <div class="mc-stat-lbl">${agotados > 0 ? 'Agotados' : (bajos > 0 ? 'Stock bajo' : 'OK')} </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function filterMachines() {
+  const q    = document.getElementById('search-maquinas').value.toLowerCase();
+  const ptv  = document.getElementById('filter-ptv').value;
+  const est  = document.getElementById('filter-estado').value;
+
+  let filtered = state.machines.filter(m => {
+    const textMatch = (m.C_MAQUINA + ' ' + (m.D_DESCRIPCION || '') + ' ' + m.C_PUNTOVENTA)
+      .toLowerCase().includes(q);
+    const ptvMatch  = !ptv || m.ID_PUNTOVENTA == ptv;
+    const estMatch  = !est ||
+      (est === 'ok'     && !Number(m.PRODS_AGOTADOS) && !Number(m.PRODS_BAJOS)) ||
+      (est === 'warn'   && Number(m.PRODS_BAJOS) > 0) ||
+      (est === 'danger' && Number(m.PRODS_AGOTADOS) > 0);
+    return textMatch && ptvMatch && estMatch;
+  });
+
+  renderMachineGrid(filtered);
+}
+
+// --- Machine detail ---
+async function openMachineDetail(id) {
+  state.currentMachineId = id;
+
+  document.getElementById('maquinas-list-view').style.display = 'none';
+  document.getElementById('machine-detail-view').style.display = 'block';
+
+  const machine = state.machines.find(m => m.ID_MAQUINA == id);
+  if (machine) {
+    const titleEl = document.getElementById('detail-title');
+    const subEl   = document.getElementById('detail-subtitle');
+    if (titleEl) titleEl.innerHTML = machine.D_DESCRIPCION || machine.C_MAQUINA;
+    if (subEl)   subEl.textContent = machine.C_MAQUINA + ' · ' + machine.C_PUNTOVENTA;
+  }
+
+  document.getElementById('stock-table-container').innerHTML =
+    `<div class="skeleton" style="height:200px; border-radius:12px"></div>`;
+
+  const stock = await api(`get.php?action=stock_maquina&id=${id}`);
+  if (stock) {
+    state.currentMachineStock = stock;
+    renderStockTable(stock);
+  }
+}
+
+function renderStockTable(stock) {
+  if (!stock.length) {
+    document.getElementById('stock-table-container').innerHTML =
+      `<div class="empty-state"><p>Esta máquina no tiene productos configurados.</p></div>`;
+    return;
+  }
+
+  const maxQty = Math.max(...stock.map(s => Number(s.N_CANTIDAD)), 1);
+
+  const rows = stock.map(s => {
+    const qty = Number(s.N_CANTIDAD);
+    const cls = qty === 0 ? 'empty' : (qty <= LOW_THRESHOLD ? 'low' : 'ok');
+    const pct = Math.round((qty / Math.max(maxQty, 1)) * 100);
+    const barColor = qty === 0 ? 'var(--red)' : (qty <= LOW_THRESHOLD ? 'var(--accent)' : 'var(--green)');
+    const numericPrice = s.I_PRECIO ? parseFloat(String(s.I_PRECIO).replace(',', '.')) : 0;
+    const precioFormat = numericPrice ? numericPrice.toFixed(2) + ' \u20AC' : '—';
+    
+    let actionBtn = '';
+    if (state.userRole === 'admin') {
+      actionBtn = `
+        <button class="btn btn-sm" onclick="openReponer(${s.ID_STOCKMAQ}, '${(s.D_DESCRIPCION || s.C_PRODUCTO).replace(/'/g,"\\'")}', ${qty})">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+          Reponer
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="quitarProducto(${s.ID_STOCKMAQ})" style="margin-left:6px" aria-label="Quitar producto" title="Quitar producto">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 6L18 18" />
+            <path d="M6 18L18 6" />
+          </svg>
+        </button>
+      `;
+    } else {
+      if (qty > 0) {
+        actionBtn = `
+          <button class="btn btn-sm btn-primary" onclick="addToCart(${s.ID_STOCKMAQ}, '${(s.D_DESCRIPCION || s.C_PRODUCTO).replace(/'/g,"\\'")}', ${numericPrice}, ${qty}, ${state.currentMachineId})">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            Añadir
+          </button>
+        `;
+      } else {
+        actionBtn = `
+          <button class="btn btn-sm" disabled style="opacity: 0.5; cursor: not-allowed; border-color: var(--muted); color: var(--muted);">
+            Agotado
+          </button>
+        `;
+      }
+    }
+
+    return `<tr class="stock-row">
+      <td>
+        <div class="prod-name">${s.D_DESCRIPCION || s.C_PRODUCTO}</div>
+        <div class="prod-code">${s.C_PRODUCTO}</div>
+      </td>
+      <td class="prod-price">${precioFormat}</td>
+      <td>
+        <span class="qty-pill ${cls}">${qty}</span>
+        <span class="qty-bar"><span class="qty-bar-fill" style="width:${pct}%; background:${barColor}"></span></span>
+      </td>
+      <td>
+        <span class="tag tag-${cls}">${cls === 'ok' ? 'OK' : (cls === 'low' ? 'Bajo' : 'Agotado')}</span>
+      </td>
+      <td style="text-align:right">
+        ${actionBtn}
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('stock-table-container').innerHTML = `
+    <table class="stock-table">
+      <thead><tr>
+        <th>Producto</th>
+        <th>Precio</th>
+        <th>Stock</th>
+        <th>Estado</th>
+        <th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function showMachineList() {
+  document.getElementById('maquinas-list-view').style.display = 'block';
+  document.getElementById('machine-detail-view').style.display = 'none';
+  state.currentMachineId = null;
+}
+
+// ----------------------------------------
+// ALERTS
+// ----------------------------------------
+async function loadAlerts() {
+  const alerts = await api('get.php?action=alertas');
+  if (!alerts) return;
+  state.alerts = alerts;
+  updateAlertBadge(alerts.length);
+  renderAlerts(alerts);
+}
+
+// ----------------------------------------
+// PRODUCTS
+// ----------------------------------------
+async function loadProducts() {
+  const products = await api('get.php?action=productos');
+  if (!products) return;
+  state.products = products;
+  renderProducts(products);
+}
+
+function renderProducts(products) {
+  const grid = document.getElementById('products-grid');
+  if (grid) {
+    grid.innerHTML = products.map(p => {
+      const price = p.I_PRECIO ? parseFloat(String(p.I_PRECIO).replace(',','.')).toFixed(2) + ' \u20AC' : '—';
+      return `
+        <div class="machine-card" style="cursor:default">
+          <div class="mc-code">${p.C_PRODUCTO}</div>
+          <div class="mc-name" style="margin-top:4px">${p.D_DESCRIPCION || p.C_PRODUCTO}</div>
+          <div style="margin-top:12px; font-family:var(--font-head); font-size:22px; font-weight:800; color:var(--accent)">
+            ${price}      
+          </div>
+        </div>`;
+    }).join('');
+  }
+}
+
+// -------------------------------------------------------------------------
+//  REPONER PAGE
+// -------------------------------------------------------------------------
+async function loadReponerSelects() {
+  if (!state.puntos.length) {
+    const puntos = await api('get.php?action=puntos_venta');
+    if (puntos) state.puntos = puntos;
+  }
+
+  const sel = document.getElementById('rep-ptv');
+  if (sel) {
+    sel.innerHTML = '<option value="">— Selecciona punto de venta —</option>' +
+      state.puntos.map(p => `<option value="${p.ID_PUNTOVENTA}">${p.C_PUNTOVENTA}</option>`).join('');
+  }
+}
+
+async function loadRepMachines() {
+  const ptvId = document.getElementById('rep-ptv').value;
+  const sel = document.getElementById('rep-maquina');
+  document.getElementById('rep-stock-container').innerHTML = '';
+  sel.innerHTML = '<option value="">— Selecciona máquina —</option>';
+
+  if (!ptvId) return;
+
+  const machines = await api(`get.php?action=maquinas&ptv=${ptvId}`);
+  if (machines) {
+    sel.innerHTML = '<option value="">— Selecciona máquina —</option>' +
+      machines.map(m => `<option value="${m.ID_MAQUINA}">${m.C_MAQUINA} - ${m.D_DESCRIPCION || ''}</option>`).join('');
+  }
+}
+
+async function loadRepStock() {
+  const maqId = document.getElementById('rep-maquina').value;
+  const container = document.getElementById('rep-stock-container');
+  if (!maqId) { container.innerHTML = ''; return; }
+
+  container.innerHTML = `<div class="skeleton" style="height:180px; border-radius:12px"></div>`;
+
+  const stock = await api(`get.php?action=stock_maquina&id=${maqId}`);
+  if (!stock) return;
+
+  if (!stock.length) {
+    container.innerHTML = `<div class="empty-state"><p>Máquina sin productos configurados.</p></div>`;
+    return;
+  }
+
+  const rows = stock.map(s => {
+    const qty = Number(s.N_CANTIDAD);
+    const cls = qty === 0 ? 'empty' : (qty <= LOW_THRESHOLD ? 'low' : 'ok');
+    return `<tr class="stock-row">
+      <td><div class="prod-name">${s.D_DESCRIPCION || s.C_PRODUCTO}</div></td>
+      <td><span class="qty-pill ${cls}">${qty}</span></td>
+      <td>
+        <input type="number" min="0" max="999" value="${qty <= LOW_THRESHOLD ? 20 : 0}"
+          id="rep-qty-${s.ID_STOCKMAQ}" placeholder="0"
+          style="width:80px; background:var(--card); border:1px solid var(--border); color:var(--text);
+                 padding:6px 10px; border-radius:6px; font-family:var(--font-mono); font-size:13px; outline:none; text-align:center">
+      </td>
+      <td><span class="tag tag-${cls}">${cls === 'ok' ? 'OK' : (cls === 'low' ? 'Bajo' : 'Agotado')}</span></td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="section-title" style="margin-bottom:16px">Stock actual</div>
+    <table class="stock-table">
+      <thead><tr>
+        <th>Producto</th><th>Stock actual</th><th>Reponer (+uds)</th><th>Estado</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="margin-top:20px; text-align:right">
+      <button class="btn btn-primary" onclick="ejecutarReponerLote(${maqId})">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+        Confirmar reposición
+      </button>
+    </div>`;
+
+  // Store stock for batch
+  state.currentMachineStock = stock.map(s => ({...s, _maqId: maqId}));
+}
+
+async function ejecutarReponerLote(maqId) {
+  const items = state.currentMachineStock
+    .map(s => ({
+      id_stockmaq: s.ID_STOCKMAQ,
+      cantidad: parseInt(document.getElementById(`rep-qty-${s.ID_STOCKMAQ}`)?.value || '0')
+    }))
+    .filter(i => i.cantidad > 0);
+
+  if (!items.length) { toast('No hay cantidades a reponer', 'warn'); return; }
+
+  const r = await apiPost({ action: 'reponer_lote', items });
+  if (r?.ok) {
+    toast(r.mensaje, 'ok');
+    loadRepStock();
+    loadAll();
+  } else {
+    toast(r?.error || 'Error en la reposición', 'error');
+  }
+}
+
+// -------------------------------------------------------------------------
+//  REPONER INDIVIDUAL MODAL
+// -------------------------------------------------------------------------
+//  REPONER INDIVIDUAL MODAL
+// -------------------------------------------------------------------------
+//  REPONER TODAS (lote desde alertas)
+// -------------------------------------------------------------------------
+function openReponer(idStock, nombre, qtyActual) {
+  const btn = document.getElementById('btn-confirmar-modal');
+  if (btn) {
+    btn.onclick = confirmarReponer;
+    btn.textContent = 'Reponer';
+  }
+  state.reponerTarget = idStock;
+  document.getElementById('modal-reponer-body').innerHTML = `
+    <div class="form-group">
+      <div style="font-size:16px; font-weight:600; margin-bottom:4px">${nombre}</div>
+      <div style="color:var(--muted); font-size:13px; margin-bottom:16px">Stock actual: <strong style="color:var(--text)">${qtyActual} uds.</strong></div>
+      <label class="form-label">Cantidad a añadir</label>
+      <input type="number" class="form-input" id="rep-cantidad" min="1" max="999" value="10" placeholder="Unidades a reponer">
+    </div>
+    <div style="display:flex; gap:8px">
+      ${[5,10,20,50].map(n => `<button class="btn btn-sm" onclick="document.getElementById('rep-cantidad').value=${n}">${n}</button>`).join('')}
+    </div>`;
+  openModal('modal-reponer');
+}
+
+async function confirmarReponer() {
+  const qty = parseInt(document.getElementById('rep-cantidad').value);
+  if (!qty || qty < 1) { toast('Introduce una cantidad válida', 'warn'); return; }
+
+  const r = await apiPost({ action: 'reponer', id_stockmaq: state.reponerTarget, cantidad: qty });
+  if (r?.ok) {
+    toast(r.mensaje, 'ok');
+    closeModal('modal-reponer');
+    if (state.currentMachineId) {
+      openMachineDetail(state.currentMachineId);
+    }
+    loadAlerts();
+    loadAll();
+  } else {
+    toast(r?.error || 'Error', 'error');
+  }
+}
+
+// -------------------------------------------------------------------------
+//  ADD PRODUCT TO MACHINE
+// -------------------------------------------------------------------------
+//  REPONER TODAS (lote desde alertas)
+// -------------------------------------------------------------------------
+//  MODAL HELPERS
+// -------------------------------------------------------------------------
+function reponerTodas() {
+  if (!state.alerts.length) { toast('No hay alertas activas', 'warn'); return; }
+
+  const body = state.alerts.map(a => `
+    <div style="display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--border)">
+      <div style="flex:1">
+        <div style="font-size:13px; font-weight:500">${a.D_DESCRIPCION || a.C_PRODUCTO}</div>
+        <div style="font-size:11px; color:var(--muted)">${a.C_MAQUINA} · ${a.N_CANTIDAD} uds.</div>
+      </div>
+      <input type="number" value="20" min="0" max="999" id="lote-${a.ID_STOCKMAQ}"
+        style="width:70px; background:var(--card); border:1px solid var(--border); color:var(--text);
+               padding:6px 8px; border-radius:6px; font-family:var(--font-mono); font-size:13px; outline:none; text-align:center">
+    </div>`).join('');
+
+  document.getElementById('modal-lote-body').innerHTML = body;
+  openModal('modal-lote');
+}
+
+async function confirmarLote() {
+  const items = state.alerts.map(a => ({
+    id_stockmaq: a.ID_STOCKMAQ,
+    cantidad: parseInt(document.getElementById(`lote-${a.ID_STOCKMAQ}`)?.value || '0')
+  })).filter(i => i.cantidad > 0);
+
+  if (!items.length) { toast('Sin cantidades', 'warn'); return; }
+
+  const r = await apiPost({ action: 'reponer_lote', items });
+  if (r?.ok) {
+    toast(r.mensaje, 'ok');
+    closeModal('modal-lote');
+    loadAlerts();
+    loadAll();
+  } else {
+    toast(r?.error || 'Error', 'error');
+  }
+}
+
+// -------------------------------------------------------------------------
+//  TOAST
+// -------------------------------------------------------------------------
+//  ADD PRODUCT TO MACHINE
+// -------------------------------------------------------------------------
+//  LOGIN & SESSION LOGIC
+// -------------------------------------------------------------------------
+async function openAddProduct() {
+  if (!state.products.length) {
+    const products = await api('get.php?action=productos');
+    if (products) state.products = products;
+  }
+
+  const sel = document.getElementById('add-prod-select');
+  if (sel) {
+    sel.innerHTML = state.products.map(p =>
+      `<option value="${p.ID_PRODUCTO}">${p.C_PRODUCTO} - ${p.D_DESCRIPCION || ''}</option>`
+    ).join('');
+  }
+
+  openModal('modal-add-product');
+}
+
+async function confirmarAddProduct() {
+  const prodId = parseInt(document.getElementById('add-prod-select').value);
+  const qty    = parseInt(document.getElementById('add-prod-qty').value || '0');
+
+  if (!prodId) { toast('Selecciona un producto', 'warn'); return; }
+
+  const r = await apiPost({
+    action: 'añadir_producto',
+    id_maquina:  state.currentMachineId,
+    id_producto: prodId,
+    cantidad:    qty
+  });
+
+  if (r?.ok) {
+    toast(r.mensaje, 'ok');
+    closeModal('modal-add-product');
+    openMachineDetail(state.currentMachineId);
+  } else {
+    toast(r?.error || 'Error', 'error');
+  }
+}
+
+async function quitarProducto(idStock) {
+  if (!confirm('¿Quitar este producto de la máquina?')) return;
+  const r = await apiPost({ action: 'quitar_producto', id_stockmaq: idStock });
+  if (r?.ok) {
+    toast(r.mensaje, 'ok');
+    openMachineDetail(state.currentMachineId);
+    loadAll();
+  } else {
+    toast(r?.error || 'Error', 'error');
+  }
+}
+
+// -------------------------------------------------------------------------
+//  USER BALANCE REFILL
+// -------------------------------------------------------------------------
+//  MODAL HELPERS
+// -------------------------------------------------------------------------
+//  SHOPPING CART MANAGEMENT
+// -------------------------------------------------------------------------
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close on backdrop click
+document.querySelectorAll('.modal-backdrop').forEach(b => {
+  b.addEventListener('click', e => { if (e.target === b) b.classList.remove('open'); });
+});
+
+// -------------------------------------------------------------------------
+//  ADMIN CATALOG REGISTRATION
+// -------------------------------------------------------------------------
+//  TOAST
+// -------------------------------------------------------------------------
+function toast(msg, type = 'ok') {
+  const ICONS = {
+    ok: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M20 6L9 17l-5-5"></path></svg>',
+    error: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M18 6L6 18M6 6l12 12"></path></svg>',
+    warn: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><path d="M12 9v4"></path><circle cx="12" cy="17" r="1"></circle></svg>'
+  };
+
+  const el = document.createElement('div');
+  el.className = `toast ${type === 'error' ? 'error' : (type === 'warn' ? 'warn' : '')}`;
+  el.innerHTML = `${ICONS[type] || ICONS.ok}<span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// -------------------------------------------------------------------------
+//  LOGIN & SESSION LOGIC
+// -------------------------------------------------------------------------
+function selectLoginRole(role) {
+  document.getElementById('role-admin-card').classList.toggle('active', role === 'admin');
+  document.getElementById('role-user-card').classList.toggle('active', role === 'user');
+  
+  const usernameInput = document.getElementById('login-username');
+  const passwordInput = document.getElementById('login-password');
+  if (role === 'admin') {
+    usernameInput.value = 'admin';
+    passwordInput.value = 'admin';
+  } else {
+    usernameInput.value = 'user';
+    passwordInput.value = 'user';
+  }
+}
+
+function submitLogin() {
+  const user = document.getElementById('login-username').value.trim();
+  const pass = document.getElementById('login-password').value.trim();
+  
+  if (user === 'admin' && pass === 'admin') {
+    initUserSession('admin', 'Administrador');
+  } else if (user === 'user' && pass === 'user') {
+    initUserSession('user', 'Usuario');
+  } else {
+    toast('Credenciales incorrectas (usa admin/admin o user/user)', 'error');
+  }
+}
+
+function initUserSession(role, name) {
+  state.userRole = role;
+  state.userName = name;
+  state.userBalance = 20.00;
+  state.cart = [];
+  
+  sessionStorage.setItem('vend_session', JSON.stringify({ role, name, balance: state.userBalance }));
+  sessionStorage.removeItem('vend_cart');
+  
+  document.getElementById('login-overlay').classList.add('hidden');
+  applyRolePermissions();
+  updateCartBadge();
+  
+  loadAll(); // Load all database stats
+  
+  if (role === 'user') {
+    navigate('maquinas');
+  } else {
+    navigate('dashboard');
+  }
+  toast(`Sesión iniciada como ${name}`, 'ok');
+}
+
+function applyRolePermissions() {
+  const isUser = state.userRole === 'user';
+  
+  // Sidebar links visible/hidden
+  const dashLink = document.querySelector('[data-page="dashboard"]');
+  if (dashLink) dashLink.style.display = isUser ? 'none' : 'flex';
+  
+  const alertsLink = document.querySelector('[data-page="alertas"]');
+  if (alertsLink) alertsLink.style.display = isUser ? 'none' : 'flex';
+  
+  const repLink = document.querySelector('[data-page="reponer"]');
+  if (repLink) repLink.style.display = isUser ? 'none' : 'flex';
+  
+  // Detail buttons
+  const addProductBtn = document.querySelector('#machine-detail-view .btn-primary');
+  if (addProductBtn) {
+    addProductBtn.style.display = isUser ? 'none' : 'inline-flex';
+  }
+  
+  // Admin Catalog Panel
+  const adminCatalogPanel = document.getElementById('admin-catalog-panel');
+  if (adminCatalogPanel) {
+    adminCatalogPanel.style.display = isUser ? 'none' : 'block';
+  }
+  
+  // Sidebar user info badge
+  const badge = document.getElementById('sidebar-user-badge');
+  if (badge) {
+    badge.style.display = 'block';
+    const roleEl = document.getElementById('user-badge-role');
+    const nameEl = document.getElementById('user-badge-name');
+    if (roleEl) roleEl.textContent = state.userRole.toUpperCase();
+    if (nameEl) nameEl.innerHTML = `<span></span> ${state.userName}`;
+    
+    const balanceWidget = document.getElementById('user-balance-widget');
+    if (balanceWidget) {
+      balanceWidget.style.display = isUser ? 'flex' : 'none';
+      const balAmt = document.getElementById('balance-amount');
+      if (balAmt) balAmt.textContent = parseFloat(state.userBalance).toFixed(2) + ' \u20AC';
+    }
+  }
+  
+  // Floating cart button
+  const cartBtn = document.getElementById('cart-floating-btn');
+  if (cartBtn) {
+    cartBtn.style.display = isUser ? 'flex' : 'none';
+  }
+}
+
+function checkSavedSession() {
+  const sessionStr = sessionStorage.getItem('vend_session');
+  if (sessionStr) {
+    try {
+      const session = JSON.parse(sessionStr);
+      if (session && session.role) {
+        state.userRole = session.role;
+        state.userName = session.name;
+        state.userBalance = session.balance !== undefined ? parseFloat(session.balance) : 20.00;
+        document.getElementById('login-overlay').classList.add('hidden');
+        applyRolePermissions();
+        
+        // Restore cart from session storage if exists
+        const cartStr = sessionStorage.getItem('vend_cart');
+        if (cartStr) {
+          state.cart = JSON.parse(cartStr);
+          updateCartBadge();
+        }
+        
+        loadAll(); // Load DB data
+        
+        if (state.userRole === 'user') {
+          navigate('maquinas');
+        } else {
+          navigate('dashboard');
+        }
+        return true;
+      }
+    } catch (e) {
+      console.error("Error restoring session:", e);
+    }
+  }
+  // Show login overlay if no active session
+  document.getElementById('login-overlay').classList.remove('hidden');
+  return false;
+}
+
+function logout() {
+  state.userRole = null;
+  state.userName = null;
+  state.cart = [];
+  sessionStorage.removeItem('vend_session');
+  sessionStorage.removeItem('vend_cart');
+  
+  // Reset UI state
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('sidebar-user-badge').style.display = 'none';
+  document.getElementById('cart-floating-btn').style.display = 'none';
+  toggleCartPanel(false);
+  
+  // Reset inputs
+  document.getElementById('login-username').value = 'admin';
+  document.getElementById('login-password').value = 'admin';
+  selectLoginRole('admin');
+}
+
+// -------------------------------------------------------------------------
+//  USER BALANCE REFILL
+// -------------------------------------------------------------------------
+function refillBalance(event) {
+  if (event) event.stopPropagation();
+  state.userBalance = parseFloat((state.userBalance + 20.00).toFixed(2));
+  
+  // Update session storage
+  const sessionStr = sessionStorage.getItem('vend_session');
+  if (sessionStr) {
+    const session = JSON.parse(sessionStr);
+    session.balance = state.userBalance;
+    sessionStorage.setItem('vend_session', JSON.stringify(session));
+  }
+  
+  applyRolePermissions();
+  toast('Saldo recargado: +20.00 \u20AC', 'ok');
+}
+
+// ---------- SHOPPING CART MANAGEMENT
+function toggleCartPanel(show) {
+  const panel = document.getElementById('cart-panel');
+  if (panel) {
+    if (show) {
+      panel.classList.add('open');
+      renderCartItems();
+    } else {
+      panel.classList.remove('open');
+    }
+  }
+}
+
+function addToCart(idStock, name, price, maxQty, machineId) {
+  // Find if item is already in cart
+  const existing = state.cart.find(item => item.id_stockmaq === idStock);
+  if (existing) {
+    if (existing.qty >= maxQty) {
+      toast(`No hay más stock disponible en esta máquina (${maxQty} uds. máx)`, 'warn');
+      return;
+    }
+    existing.qty += 1;
+  } else {
+    state.cart.push({
+      id_stockmaq: idStock,
+      name: name,
+      price: price,
+      qty: 1,
+      max_qty: maxQty,
+      machine_id: machineId
+    });
+  }
+  
+  // Save cart to sessionStorage
+  sessionStorage.setItem('vend_cart', JSON.stringify(state.cart));
+  updateCartBadge();
+  toast(`Añadido: ${name} a la cesta`, 'ok');
+  
+  // Visual pulse micro-animation on the floating cart button
+  const floatingBtn = document.getElementById('cart-floating-btn');
+  if (floatingBtn) {
+    floatingBtn.style.transform = 'scale(1.15)';
+    setTimeout(() => {
+      floatingBtn.style.transform = '';
+    }, 200);
+  }
+}
+
+function updateCartQty(idStock, delta) {
+  const item = state.cart.find(i => i.id_stockmaq === idStock);
+  if (!item) return;
+  
+  const newQty = item.qty + delta;
+  if (newQty <= 0) {
+    removeFromCart(idStock);
+  } else if (newQty > item.max_qty) {
+    toast(`Límite de stock alcanzado (${item.max_qty} uds.)`, 'warn');
+  } else {
+    item.qty = newQty;
+    sessionStorage.setItem('vend_cart', JSON.stringify(state.cart));
+    updateCartBadge();
+    renderCartItems();
+  }
+}
+
+function removeFromCart(idStock) {
+  state.cart = state.cart.filter(i => i.id_stockmaq !== idStock);
+  sessionStorage.setItem('vend_cart', JSON.stringify(state.cart));
+  updateCartBadge();
+  renderCartItems();
+}
+
+function clearCart() {
+  state.cart = [];
+  sessionStorage.removeItem('vend_cart');
+  updateCartBadge();
+  renderCartItems();
+  toast('Cesta vaciada', 'ok');
+}
+
+function updateCartBadge() {
+  const totalItems = state.cart.reduce((sum, item) => sum + item.qty, 0);
+  const badge = document.getElementById('cart-floating-badge');
+  if (badge) {
+    badge.textContent = totalItems;
+  }
+}
+
+function renderCartItems() {
+  const container = document.getElementById('cart-items-container');
+  if (!container) return;
+  
+  if (!state.cart.length) {
+    container.innerHTML = `
+      <div class="cart-empty-state">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        <p>Tu cesta está vacía</p>
+        <span style="font-size:11px; margin-top:6px; color:var(--muted)">Añade productos desde las máquinas</span>
+      </div>`;
+    document.getElementById('cart-total-value').textContent = '0.00 \u20AC';
+    return;
+  }
+  
+  let totalCost = 0;
+  const html = state.cart.map(item => {
+    const cost = item.price * item.qty;
+    totalCost += cost;
+    return `
+      <div class="cart-item">
+        <div class="cart-item-info">
+          <div class="cart-item-name" title="${item.name}">${item.name}</div>
+          <div class="cart-item-price">${item.price.toFixed(2)} \u20AC / ud</div>
+        </div>
+        <div class="cart-item-qty-control">
+          <button class="cart-qty-btn" onclick="updateCartQty(${item.id_stockmaq}, -1)">-</button>
+          <span class="cart-qty-val">${item.qty}</span>
+          <button class="cart-qty-btn" onclick="updateCartQty(${item.id_stockmaq}, 1)">+</button>
+        </div>
+        <button class="cart-item-delete" onclick="removeFromCart(${item.id_stockmaq})" aria-label="Eliminar" title="Eliminar">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 6L18 18" />
+            <path d="M6 18L18 6" />
+          </svg>
+        </button>
+      </div>`;
+  }).join('');
+  
+  container.innerHTML = html;
+  document.getElementById('cart-total-value').textContent = totalCost.toFixed(2) + ' \u20AC';
+}
+
+async function checkoutCart() {
+  if (!state.cart.length) {
+    toast('La cesta está vacía', 'warn');
+    return;
+  }
+  
+  const totalCost = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  
+  if (totalCost > state.userBalance) {
+    toast(`Saldo insuficiente. Necesitas ${totalCost.toFixed(2)} \u20AC y tienes ${state.userBalance.toFixed(2)} \u20AC`, 'error');
+    return;
+  }
+  
+  const items = state.cart.map(item => ({
+    id_stockmaq: item.id_stockmaq,
+    cantidad: item.qty
+  }));
+  
+  const r = await apiPost({ action: 'vender_lote', items });
+  if (r?.ok) {
+    state.userBalance = parseFloat((state.userBalance - totalCost).toFixed(2));
+    
+    // Update session storage
+    const sessionStr = sessionStorage.getItem('vend_session');
+    if (sessionStr) {
+      const session = JSON.parse(sessionStr);
+      session.balance = state.userBalance;
+      sessionStorage.setItem('vend_session', JSON.stringify(session));
+    }
+    
+    state.cart = [];
+    sessionStorage.removeItem('vend_cart');
+    
+    updateCartBadge();
+    toggleCartPanel(false);
+    applyRolePermissions();
+    
+    toast('¡Compra realizada con éxito!', 'ok');
+    
+    if (state.currentMachineId) {
+      openMachineDetail(state.currentMachineId);
+    }
+    loadAll();
+  } else {
+    toast(r?.error || 'Error al procesar la compra', 'error');
+  }
+}
+
+// ---------- ADMIN CATALOG REGISTRATION
+async function crearNuevoProductoCatalogo() {
+  const code = document.getElementById('new-prod-code').value.trim();
+  const desc = document.getElementById('new-prod-desc').value.trim();
+  const priceVal = document.getElementById('new-prod-price').value.trim();
+  
+  if (!code || !desc || !priceVal) {
+    toast('Todos los campos son obligatorios', 'warn');
+    return;
+  }
+  
+  const price = parseFloat(priceVal);
+  if (isNaN(price) || price <= 0) {
+    toast('Introduce un precio válido mayor a 0', 'warn');
+    return;
+  }
+  
+  const r = await apiPost({
+    action: 'crear_producto',
+    c_producto:   code,
+    d_descripcion: desc,
+    precio:        price
+  });
+  
+  if (r?.ok) {
+    toast(r.mensaje || 'Producto agregado al catálogo', 'ok');
+    // Clear fields
+    document.getElementById('new-prod-code').value = '';
+    document.getElementById('new-prod-desc').value = '';
+    document.getElementById('new-prod-price').value = '';
+    // Reload products view
+    loadProducts();
+  } else {
+    toast(r?.detail || r?.error || 'Error al crear producto', 'error');
+  }
+}
+
+function updateAlertBadge(n) {
+  const badge = document.getElementById('badge-alertas');
+  if (badge) {
+    badge.textContent = n;
+    badge.className = 'nav-badge' + (n === 0 ? ' green' : '');
+  }
+}
+
+// ---------- INIT
+checkSavedSession();
+
+// ─────────────────────────────────────────────
+//  RENDER ALERTS  (función que faltaba)
+// ─────────────────────────────────────────────
+function renderAlerts(alerts) {
+  const list = document.getElementById('alerts-list');
+  if (!list) return;
+
+  if (!alerts.length) {
+    list.innerHTML = `<div class="empty-state">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <p>¡Sin alertas! Todo el stock está por encima del umbral.</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = alerts.map(a => {
+    const qty  = Number(a.N_CANTIDAD);
+    const tipo = qty === 0 ? 'critical' : 'low';
+    return `<div class="alert-item ${tipo}">
+      <div class="alert-dot ${tipo}"></div>
+      <div class="alert-info">
+        <div class="alert-product">${a.D_DESCRIPCION || a.C_PRODUCTO}</div>
+        <div class="alert-machine">${a.C_MAQUINA} · ${a.C_PUNTOVENTA}</div>
+      </div>
+      <div>
+        <div class="alert-qty ${tipo}">${qty}</div>
+        <div class="alert-qty-lbl">unidades</div>
+      </div>
+      <button class="btn btn-sm" onclick="openReponer(${a.ID_STOCKMAQ}, '${(a.D_DESCRIPCION || a.C_PRODUCTO).replace(/'/g,"\\'")}', ${qty})">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+        Reponer
+      </button>
+    </div>`;
+  }).join('');
+}
+
+</script>
+</body>
+</html>

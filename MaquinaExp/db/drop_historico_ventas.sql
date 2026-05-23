@@ -1,0 +1,39 @@
+-- Script: drop_historico_ventas.sql
+-- Elimina los objetos creados para el histórico de ventas.
+-- Ejecútalo primero si quieres limpiar el esquema antes de recrear.
+
+BEGIN
+  -- Drop trigger (ignorar si no existe)
+  BEGIN
+    EXECUTE IMMEDIATE 'DROP TRIGGER TRG_T_STOCKMAQ_HISTORICO';
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+
+  -- Drop indexes (ignorar si no existen)
+  BEGIN
+    EXECUTE IMMEDIATE 'DROP INDEX IX_HV_VENTA_TS_PROD';
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+  BEGIN
+    EXECUTE IMMEDIATE 'DROP INDEX IX_HV_VENTA_TS';
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+  BEGIN
+    EXECUTE IMMEDIATE 'DROP INDEX IX_HV_PRODUCTO';
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+  BEGIN
+    EXECUTE IMMEDIATE 'DROP INDEX IX_HV_MAQUINA';
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+
+  -- Drop table (ignorar si no existe)
+  BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE HISTORICO_VENTAS PURGE';
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+
+  -- Drop sequence (ignorar si no existe)
+  BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE HISTORICO_VENTAS_SEQ';
+  EXCEPTION WHEN OTHERS THEN NULL; END;
+
+  COMMIT;
+END;
+/
+
+-- Fin del script
